@@ -1,0 +1,150 @@
+name: pdf_word_editor
+description: >
+  PDF reader/editor — tap a word to edit it in place; the app detects the
+  original font (family, size, bold/italic) and re-draws the edited word to
+  match, then saves the result as a new PDF.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Rasterizes PDF pages to images for on-screen display, so we control
+  # pixel<->PDF-point mapping precisely for the tap-to-edit overlay.
+  pdfx: ^2.11.0
+  # Low-level PDF read/write: text extraction with per-word bounds + font
+  # metadata, and drawing/saving edits back into the PDF.
+  syncfusion_flutter_pdf: ^34.2.5
+
+  # Pick a PDF from the device
+  file_picker: ^12.1.1
+  # Temp-directory path to write the edited copy to before sharing it
+  path_provider: ^2.1.6
+  # Let the user share/export the saved PDF (also how it reaches Downloads/
+  # Drive/WhatsApp/etc. — no storage permission needed this way)
+  share_plus: ^13.3.0
+  # Decode the rendered page PNG so we can sample the real page background
+  # color instead of assuming pure white when covering an edited word.
+  image: ^4.9.2
+  # Pick an existing signature/stamp photo from the device's gallery, for
+  # the "Από εικόνα" option when placing a signature.
+  image_picker: ^1.1.2
+  shared_preferences: ^2.5.3
+  # Play Store immediate in-app update: if a newer version is published,
+  # the app blocks until the user installs it (Play install only).
+  in_app_update: ^4.2.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  # Dev-only: generates every Android mipmap density + the adaptive-icon
+  # XML, plus the iOS AppIcon.appiconset, from the two PNGs below. Run with
+  # `dart run flutter_launcher_icons` any time the icon artwork changes —
+  # it writes straight into android/ and ios/, no manual asset wrangling.
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  # Android 8+ composites these two layers itself and masks the result into
+  # whatever shape the launcher uses (circle/squircle/rounded square) — the
+  # foreground was drawn to stay inside that safe zone so nothing gets
+  # clipped regardless of which shape a given phone applies.
+  adaptive_icon_background: "#3A5CE0"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  min_sdk_android: 21
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/fonts/NotoSans-Regular.ttf
+    - assets/fonts/NotoSans-Bold.ttf
+    - assets/fonts/NotoSans-Italic.ttf
+    - assets/fonts/NotoSans-BoldItalic.ttf
+  # Registers the same Noto Sans files as an actual Flutter font family
+  # (separate from the PdfTrueTypeFont use in EmbeddedFonts) so the live
+  # "move" preview in PdfPageOverlay can render on-screen text that looks
+  # close to what will actually be drawn into the PDF, instead of falling
+  # back to whatever default system font Flutter would otherwise pick.
+  fonts:
+    - family: NotoSansPreview
+      fonts:
+        - asset: assets/fonts/NotoSans-Regular.ttf
+        - asset: assets/fonts/NotoSans-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/NotoSans-Italic.ttf
+          style: italic
+        - asset: assets/fonts/NotoSans-BoldItalic.ttf
+          weight: 700
+          style: italic
+    # Cursive "signature" fonts used only by TypeSignaturePadPage to turn a
+    # typed name into a signature-style image (an alternative to drawing
+    # one by hand). All four are OFL-licensed (Google Fonts).
+    - family: SigGreatVibes
+      fonts:
+        - asset: assets/fonts/signature/GreatVibes-Regular.ttf
+    - family: SigSacramento
+      fonts:
+        - asset: assets/fonts/signature/Sacramento-Regular.ttf
+    - family: SigAlexBrush
+      fonts:
+        - asset: assets/fonts/signature/AlexBrush-Regular.ttf
+    - family: SigAllura
+      fonts:
+        - asset: assets/fonts/signature/Allura-Regular.ttf
+    # Wider spread of moods (bold/energetic, thin/formal, rounded/casual,
+    # classic elegant, everyday handwriting) so a Latin name has real
+    # variety to pick from, not four fonts that all look similar.
+    - family: SigYellowtail
+      fonts:
+        - asset: assets/fonts/signature/Yellowtail.ttf # Apache-2.0
+    - family: SigMrsSaintDelafield
+      fonts:
+        - asset: assets/fonts/signature/MrsSaintDelafield.ttf
+    - family: SigPacifico
+      fonts:
+        - asset: assets/fonts/signature/Pacifico.ttf
+    - family: SigTangerine
+      fonts:
+        - asset: assets/fonts/signature/Tangerine.ttf
+    - family: SigDancingScript
+      fonts:
+        - asset: assets/fonts/signature/DancingScript.ttf
+    - family: SigCaveat
+      fonts:
+        - asset: assets/fonts/signature/Caveat.ttf
+    - family: SigHomemadeApple
+      fonts:
+        - asset: assets/fonts/signature/HomemadeApple.ttf # Apache-2.0
+    # A genuine connected-cursive Greek calligraphy face (Apostolos
+    # Syropoulos, OFL, distributed via TeX Live/CTAN) — unlike every free
+    # Google Fonts "Handwriting" family, which has zero Greek glyphs, this
+    # one actually joins Greek letters the way a real signature does. Greek
+    # only: it has no Latin glyphs, so it's never offered for a Latin name.
+    - family: SigFrederika
+      fonts:
+        - asset: assets/fonts/signature/Frederika2016.otf
+    # These three are elegant italic serif faces rather than connected
+    # cursive script — a fallback tier for a Greek name, since Frederika
+    # above is the one option that actually looks hand-signed. Kept as
+    # alternates because they're still full Greek coverage and give some
+    # choice beyond the one calligraphic face.
+    - family: SigEBGaramond
+      fonts:
+        - asset: assets/fonts/signature/EBGaramond-Italic.ttf
+          style: italic
+    - family: SigAlegreya
+      fonts:
+        - asset: assets/fonts/signature/Alegreya-Italic.ttf
+          style: italic
+    - family: SigGFSNeohellenic
+      fonts:
+        - asset: assets/fonts/signature/GFSNeohellenic-Italic.ttf
+          style: italic
